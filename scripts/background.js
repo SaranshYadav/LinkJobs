@@ -4,6 +4,8 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
+let allowExtraction = true;
+
 async function runExtractionLoop(tabId){
   console.log("Injecting content script(s)");
   try {
@@ -22,7 +24,7 @@ async function runExtractionLoop(tabId){
     });
     const extraction_response = await response.json();
     console.log("API response:", extraction_response);
-    if(extraction_response.status == "success"){
+    if(extraction_response.status == "success" && allowExtraction){
       setTimeout(() => {
         runExtractionLoop(tabId);
       }, 5000);
@@ -32,19 +34,24 @@ async function runExtractionLoop(tabId){
   }
 };
 
-chrome.action.onClicked.addListener(async (tab) => {
-  const prevState = await chrome.action.getBadgeText({
-    tabId: tab.id,
-  });
+chrome.runtime.onMessage.addListener(async(request, sender, sendResponse) => {
+  if (request.action === "captureTime") {
+    const tabId = request.tabId;
 
-  const nextState = prevState === "ON" ? "OFF" : "ON";
+    console.log(`Time in Milliseconds: ${request.milliseconds} ms`);
+    console.log(`Breakdown:`, request.details);
 
-  await chrome.action.setBadgeText({
-    tabId: tab.id,
-    text: nextState,
-  });
-
-  if (nextState === "ON") {
-    runExtractionLoop(tab.id);
+    await chrome.action.setBadgeText({
+      tabId: tabId,
+      text: "ON",
+    });
+    runExtractionLoop(tabId);
+    setTimeout(() => {
+      allowExtraction = false;
+      chrome.action.setBadgeText({
+        tabId: tabId,
+        text: "OFF",
+      });
+    }, request.milliseconds);
   }
 });
