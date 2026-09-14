@@ -1,14 +1,7 @@
-chrome.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "EXTRACT_PAGE") {
-        const result = [];
-        const interval = setInterval(() => {
-            result.push(...extractPage());
-        }, 5000);
-
-        setTimeout(() => {
-            clearInterval(interval);
-            console.log("result: ", result);
-        }, 20000);
+        const resultData = extractPage();
+        sendResponse({ success: true, data: resultData });
     }
 });
 
@@ -69,6 +62,13 @@ function extractPage() {
 
     if (scrollable) {
         scrollable.scrollTop = scrollable.scrollHeight;
+    }
+
+    const button = Array.from(document.querySelectorAll('button'))
+    .find(el => el.textContent.trim().toLowerCase() === 'load more');
+
+    if (button) {
+        button.click();
     }
 
     return texts;
