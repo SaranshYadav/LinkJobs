@@ -48,7 +48,7 @@ function extractPage() {
     const texts = [];
 
     for (const element of postElements) {
-        texts.push(element.innerText);
+        texts.push(element.innerText+'\n');
     }
 
     console.log("Extracted:", texts);
